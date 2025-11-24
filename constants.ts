@@ -94,4 +94,5 @@ export const GENERAL_PERSONA: Persona = {
   color: 'bg-[#0a2540]',
 };
 
-export const MODEL_NAME = 'gemini-2.5-flash';
+// Internal model configuration identifier
+export const DEFAULT_MODEL_ID = 'gemini-2.5-flash';

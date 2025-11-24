@@ -4,7 +4,7 @@ import MessageItem from './components/MessageItem';
 import InputArea from './components/InputArea';
 import { Persona, ChatMessage, Attachment, ChatSession } from './types';
 import { PERSONAS, GENERAL_PERSONA } from './constants';
-import { initChatSession, sendMessageStream } from './services/geminiService';
+import { initChatSession, sendMessageStream } from './services/aiService';
 import { saveSession, getSessions, deleteSession } from './services/storageService';
 import { IconMenu } from './components/Icons';
 

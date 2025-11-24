@@ -3,9 +3,8 @@ import { DEFAULT_MODEL_ID } from "../constants";
 import { Attachment } from "../types";
 
 let chatSession: Chat | null = null;
-let currentModel: GenerativeModel | null = null;
 
-// Initialize the Gemini client
+// Initialize the AI client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const initChatSession = (systemInstruction: string) => {
@@ -19,7 +18,7 @@ export const initChatSession = (systemInstruction: string) => {
     });
     return true;
   } catch (error) {
-    console.error("Failed to initialize chat session:", error);
+    console.error("Failed to initialize AI session:", error);
     return false;
   }
 };
@@ -30,7 +29,7 @@ export const sendMessageStream = async (
   onChunk: (text: string) => void
 ): Promise<string> => {
   if (!chatSession) {
-    throw new Error("Chat session not initialized.");
+    throw new Error("AI session not initialized.");
   }
 
   let fullResponse = "";
@@ -58,7 +57,6 @@ export const sendMessageStream = async (
 
     // If we only have text, we can send just the string, but for consistency with attachments we use the parts array usually.
     // However, the SDK's Chat.sendMessageStream expects a generic message structure.
-    // It handles string or ContentPart[].
     const messagePayload = parts.length === 1 && parts[0].text ? parts[0].text : parts;
 
     const result = await chatSession.sendMessageStream({ message: messagePayload });
