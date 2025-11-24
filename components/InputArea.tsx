@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { IconSend, IconPaperclip, IconX } from './Icons';
 import { Attachment } from '../types';
@@ -73,22 +74,21 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, persona
   }, [text]);
 
   return (
-    <div className="w-full flex justify-center pointer-events-auto">
+    <div className="w-full flex justify-center pointer-events-auto px-4 pb-6 pt-2">
       <div className="w-full max-w-4xl relative transition-all duration-300 ease-in-out">
         
         <div 
           className={`
             relative
-            bg-white/90
-            backdrop-blur-xl
+            backdrop-blur-2xl
             rounded-[26px]
-            border
             transition-all duration-300
             flex flex-col
             overflow-hidden
+            ring-1 ring-white/80
             ${isFocused 
-              ? 'shadow-2xl border-slate-300 translate-y-[-2px]' 
-              : 'shadow-xl border-slate-200'
+              ? 'shadow-2xl border-transparent translate-y-[-2px] bg-white/90' 
+              : 'shadow-[0_8px_40px_-12px_rgba(0,0,0,0.3)] border-transparent bg-gradient-to-b from-white/80 to-white/90'
             }
           `}
           onFocus={() => setIsFocused(true)}
@@ -136,9 +136,9 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, persona
               onKeyDown={handleKeyDown}
               placeholder="Ask anything..."
               rows={1}
-              className="flex-1 py-4 px-2 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-[#0a2540] placeholder-slate-400 text-[16px] md:text-lg font-medium leading-relaxed min-h-[56px]"
+              className="flex-1 py-4 px-2 bg-transparent border-none focus:ring-0 focus:outline-none resize-none text-[#0a2540] placeholder-slate-500/80 text-[16px] md:text-lg font-medium leading-relaxed min-h-[56px]"
               disabled={isLoading}
-              style={{ outline: 'none', boxShadow: 'none' }}
+              style={{ outline: 'none', boxShadow: 'none', background: 'transparent' }}
             />
 
             <button
@@ -160,7 +160,7 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, persona
         </div>
         
         <div className="text-center mt-3 transition-opacity duration-500">
-           <p className="text-[10px] md:text-[11px] text-slate-400 font-medium tracking-wide">
+           <p className="text-[10px] md:text-[11px] text-slate-500 font-medium tracking-wide">
              Maven AI can make mistakes. Check important info.
            </p>
         </div>

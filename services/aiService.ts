@@ -1,4 +1,4 @@
-import { GoogleGenAI, Chat, GenerativeModel } from "@google/genai";
+import { GoogleGenAI, Chat } from "@google/genai";
 import { DEFAULT_MODEL_ID } from "../constants";
 import { Attachment } from "../types";
 

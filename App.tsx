@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from './components/Sidebar';
 import MessageItem from './components/MessageItem';
@@ -6,7 +7,7 @@ import { Persona, ChatMessage, Attachment, ChatSession } from './types';
 import { PERSONAS, GENERAL_PERSONA } from './constants';
 import { initChatSession, sendMessageStream } from './services/aiService';
 import { saveSession, getSessions, deleteSession } from './services/storageService';
-import { IconMenu } from './components/Icons';
+import { IconMenu, getIcon } from './components/Icons';
 
 const App: React.FC = () => {
   // Start with no persona selected (null)
@@ -17,15 +18,26 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDesktopSidebarCollapsed, setIsDesktopSidebarCollapsed] = useState(true);
+  
+  // Scroll State
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    // Only scroll if we have messages to prevent jumpiness
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     if (messages.length > 0) {
       requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior });
       });
     }
+  };
+
+  // Track user scroll to pause auto-scrolling if they move up
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // If user is within 100px of bottom, enable auto-scroll. Otherwise pause it.
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShouldAutoScroll(isAtBottom);
   };
 
   useEffect(() => {
@@ -60,17 +72,31 @@ const App: React.FC = () => {
     }
   }, [messages, currentSessionId, currentPersona]);
 
+  // Smart Scroll Effect
   useEffect(() => {
-    if (isLoading) {
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    
+    // 1. If the user just sent a message, force scroll to bottom to show it
+    if (lastMessage.role === 'user') {
+      scrollToBottom();
+      setShouldAutoScroll(true); // Reset auto-scroll state
+      return;
+    }
+
+    // 2. If model is typing (isLoading) OR finished, only scroll if user hasn't scrolled up
+    if (shouldAutoScroll) {
        scrollToBottom();
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading]); // Removed shouldAutoScroll from deps to prevent jump when user scrolls down manually
 
   const handleNewChat = () => {
     setMessages([]);
     const newId = Date.now().toString();
     setCurrentSessionId(newId);
     setCurrentPersona(null); 
+    setShouldAutoScroll(true);
   };
 
   const handleSelectPersona = (persona: Persona) => {
@@ -78,6 +104,7 @@ const App: React.FC = () => {
     setMessages([]);
     const newId = Date.now().toString();
     setCurrentSessionId(newId);
+    setShouldAutoScroll(true);
   };
 
   const handleLoadSession = (session: ChatSession) => {
@@ -95,6 +122,11 @@ const App: React.FC = () => {
     if (window.innerWidth >= 768) {
         setIsDesktopSidebarCollapsed(false);
     }
+    // Give slight delay for render before scrolling
+    setTimeout(() => {
+        setShouldAutoScroll(true);
+        scrollToBottom('auto');
+    }, 100);
   };
 
   const handleDeleteSession = (id: string) => {
@@ -127,6 +159,7 @@ const App: React.FC = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+    setShouldAutoScroll(true); // Ensure we follow the conversation
 
     const modelMsgId = (Date.now() + 1).toString();
     setMessages((prev) => [
@@ -181,9 +214,9 @@ const App: React.FC = () => {
 
   const BackgroundBlobs = () => (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-200/30 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob"></div>
-      <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-cyan-200/30 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-[-20%] left-[20%] w-[60vw] h-[60vw] bg-pink-200/30 rounded-full mix-blend-multiply filter blur-[80px] opacity-60 animate-blob animation-delay-4000"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-200/30 rounded-full mix-blend-multiply filter blur-[80px] opacity-40 animate-blob"></div>
+      <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-cyan-200/30 rounded-full mix-blend-multiply filter blur-[80px] opacity-40 animate-blob animation-delay-2000"></div>
+      <div className="absolute bottom-[-20%] left-[20%] w-[60vw] h-[60vw] bg-pink-200/30 rounded-full mix-blend-multiply filter blur-[80px] opacity-40 animate-blob animation-delay-4000"></div>
     </div>
   );
 
@@ -207,13 +240,13 @@ const App: React.FC = () => {
         onToggleDesktop={() => setIsDesktopSidebarCollapsed(!isDesktopSidebarCollapsed)}
       />
 
-      {/* Main Layout: Flex Column */}
+      {/* Main Layout: Flex Column, Relative for absolute positioning of footer */}
       <main className="flex-1 flex flex-col min-w-0 h-full relative z-10 transition-all duration-500">
         
-        {/* Background */}
+        {/* Background - Explicitly Z-0 */}
         <BackgroundBlobs />
 
-        {/* Header */}
+        {/* Header - Z-20 to sit above blobs and scroll */}
         <header className="h-14 flex-shrink-0 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-20 mt-2">
            <div className="flex items-center gap-4">
              <button 
@@ -238,28 +271,53 @@ const App: React.FC = () => {
            )}
         </header>
 
-        {/* Scrollable Content Area - Uses flex-1 and proper min-h-0 for Firefox/Safari flex nesting */}
-        <div className="flex-1 overflow-y-auto min-h-0 relative w-full z-10 custom-scrollbar scroll-smooth">
+        {/* Scrollable Content Area */}
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto min-h-0 relative w-full z-10 custom-scrollbar scroll-smooth"
+        >
           <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 flex flex-col min-h-full">
             
             {/* Empty State: Centered Layout */}
             {!isChatActive && (
                <div className="flex-1 flex flex-col items-center justify-center pb-20 animate-fade-in">
-                  <div className="w-full max-w-3xl mx-auto px-4 text-center">
-                    <div className="mx-auto w-20 h-20 mb-8 bg-gradient-to-tr from-[#0a2540] to-[#635bff] rounded-[24px] flex items-center justify-center shadow-2xl shadow-indigo-500/30 transform rotate-3 hover:rotate-6 transition-transform duration-500">
-                       <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                 {/* Dynamic Hero Section */}
+                 {currentPersona ? (
+                    <div className="w-full max-w-3xl mx-auto px-4 text-center animate-fade-in">
+                        <div className={`mx-auto w-20 h-20 mb-8 ${currentPersona.color} rounded-[24px] flex items-center justify-center shadow-2xl shadow-slate-400/30 transform rotate-3 transition-transform duration-500`}>
+                            <div className="text-white">
+                                {getIcon(currentPersona.icon, "w-10 h-10")}
+                            </div>
+                        </div>
+                        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter text-[#0a2540] mb-6">
+                            {currentPersona.name}
+                        </h1>
+                        <p className="text-lg md:text-xl text-slate-500 font-medium max-w-xl mx-auto mb-12 leading-relaxed">
+                            {currentPersona.role} <br/>
+                            <span className={getAccentColor()}>{currentPersona.description}</span>
+                        </p>
+                         <div className="w-full transform transition-all duration-500 hover:scale-[1.01]">
+                           <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} personaColor={getAccentColor()} />
+                        </div>
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter text-[#0a2540] mb-6">
-                      Maven
-                    </h1>
-                    <p className="text-lg md:text-xl text-slate-500 font-medium max-w-xl mx-auto mb-12 leading-relaxed">
-                      Your personal council of experts. <br/>
-                      <span className="text-[#635bff]">Architect your ideas.</span>
-                    </p>
-                    <div className="w-full transform transition-all duration-500 hover:scale-[1.01]">
-                       <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} personaColor={getAccentColor()} />
+                 ) : (
+                    <div className="w-full max-w-3xl mx-auto px-4 text-center">
+                      <div className="mx-auto w-20 h-20 mb-8 bg-gradient-to-tr from-[#0a2540] to-[#635bff] rounded-[24px] flex items-center justify-center shadow-2xl shadow-indigo-500/30 transform rotate-3 hover:rotate-6 transition-transform duration-500">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                      </div>
+                      <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter text-[#0a2540] mb-6">
+                        Maven
+                      </h1>
+                      <p className="text-lg md:text-xl text-slate-500 font-medium max-w-xl mx-auto mb-12 leading-relaxed">
+                        Your personal council of experts. <br/>
+                        <span className="text-[#635bff]">Architect your ideas.</span>
+                      </p>
+                      <div className="w-full transform transition-all duration-500 hover:scale-[1.01]">
+                         <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} personaColor={getAccentColor()} />
+                      </div>
                     </div>
-                  </div>
+                 )}
                </div>
             )}
 
@@ -284,9 +342,9 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Fixed Footer Input Area - Only when chat is active */}
+        {/* Footer Input Area - Absolute positioning to stay within Main relative container */}
         {isChatActive && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6 pointer-events-none md:pl-[280px] transition-all duration-500">
+          <div className="absolute bottom-0 left-0 right-0 z-50 pointer-events-none md:pl-[280px] transition-all duration-500">
              <div className="w-full max-w-5xl mx-auto">
                <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} personaColor={getAccentColor()} />
              </div>

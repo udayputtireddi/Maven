@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Persona, ChatMessage, ChatSession } from '../types';
 import { PERSONAS } from '../constants';
@@ -111,8 +112,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         : 'hover:bg-white/30 text-slate-600 hover:text-[#0a2540]'
                     }`}
                   >
-                    <div className={`p-1.5 rounded-md mr-3 transition-all duration-300 ${isActive ? 'scale-100 text-[#635bff] bg-[#635bff]/10' : 'text-slate-400 group-hover:text-slate-600'}`}>
-                      {getIcon(persona.icon, 'w-4 h-4')}
+                    <div className={`p-1.5 rounded-md mr-3 transition-all duration-300 ${isActive ? 'scale-110 text-[#635bff] bg-[#635bff]/10' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                      {getIcon(persona.icon, `w-4 h-4 ${isActive ? 'animate-gentle-bounce' : ''}`)}
                     </div>
                     <div className="truncate text-[13px]">{persona.name}</div>
                   </button>

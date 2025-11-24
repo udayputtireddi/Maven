@@ -1,9 +1,8 @@
-import { GoogleGenAI, Chat, GenerativeModel } from "@google/genai";
+import { GoogleGenAI, Chat } from "@google/genai";
 import { DEFAULT_MODEL_ID } from "../constants";
 import { Attachment } from "../types";
 
 let chatSession: Chat | null = null;
-let currentModel: GenerativeModel | null = null;
 
 // Initialize the Gemini client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

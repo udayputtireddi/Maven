@@ -2,8 +2,6 @@
 
 Maven is a sophisticated, AI-powered web application that gives you instant access to specialized personas. Whether you need a Code Review from a Senior Engineer, strategic advice from a Product Manager, or travel tips from an Explorer, Maven provides context-aware, expert assistance in a beautiful, document-style interface.
 
-![Maven App Screenshot](https://via.placeholder.com/1200x600?text=Maven+App+Preview)
-
 ## ✨ Features
 
 *   **Expert Personas**: Switch seamlessly between specialized roles:
