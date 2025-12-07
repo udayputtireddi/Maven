@@ -2,29 +2,6 @@
 
 Maven is a sophisticated, AI-powered web application that gives you instant access to specialized personas. Whether you need a Code Review from a Senior Engineer, strategic advice from a Product Manager, or travel tips from an Explorer, Maven provides context-aware, expert assistance in a beautiful, document-style interface.
 
-## ✨ Features
-
-*   **Expert Personas**: Switch seamlessly between specialized roles:
-    *   👩‍💻 **SWE Mentor**: Code reviews & system design.
-    *   📊 **Data Analyst**: Statistical interpretation & insights.
-    *   💼 **Career Coach**: Resume polishing & interview prep.
-    *   🛡️ **Cyber Consultant**: Security audits & best practices.
-    *   🚀 **Product Manager**: Strategy & roadmapping.
-    *   ✈️ **Travel Guide**: Itinerary planning.
-    *   🏋️ **Fitness Coach**: Workouts & nutrition.
-    *   ✍️ **Creative Muse**: Storytelling & copywriting.
-    *   🎓 **Academic**: Research & deep dives.
-*   **Modern UI**: Inspired by Stripe and Perplexity, featuring:
-    *   Glassmorphism & Mesh Gradients.
-    *   Floating inputs & smooth transitions.
-    *   Document-style typography.
-*   **Rich Content**:
-    *   Markdown rendering (Bold, Lists, Headers).
-    *   Code syntax highlighting.
-    *   File attachments & analysis.
-*   **Local History**:
-    *   Auto-saves conversation threads.
-    *   Export chat history to JSON.
       
 ## 🛠️ Tech Stack
 
