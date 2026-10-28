@@ -1,78 +1,42 @@
-import { GoogleGenAI, Chat } from "@google/genai";
-import { DEFAULT_MODEL_ID } from "../constants";
-import { Attachment } from "../types";
-
-let chatSession: Chat | null = null;
-
-// Initialize the AI client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-export const initChatSession = (systemInstruction: string) => {
+import { aiFetch } from './aiClient';
+import { getAIAuth } from './aiAuth';
+import { PERSONAS, GENERAL_PERSONA } from '../constants';
+import type { Attachment } from '../types';
+let personaId = GENERAL_PERSONA.id;
+let history: { role: 'user' | 'model'; text: string }[] = [];
+let historyOwner = '';
+export function initChatSession(systemInstruction: string) {
+  personaId = [...PERSONAS, GENERAL_PERSONA].find(p => p.systemInstruction === systemInstruction)?.id || GENERAL_PERSONA.id;
+  history = [];
+  return true;
+}
+export async function sendMessageStream(text: string, attachments: Attachment[], onChunk: (text: string) => void): Promise<string> {
+  const uid = getAIAuth().currentUser?.uid || '';
+  if (uid !== historyOwner) { history = []; historyOwner = uid; }
+  const response = await aiFetch('chat', { personaId, history: history.slice(-12), text, attachments });
+  if (!response.body) throw new Error('No AI response stream.');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let pending = '', full = '', done = false;
+  function consume(line: string) {
+    if (!line.trim()) return;
+    const event = JSON.parse(line);
+    if (event.error) throw new Error(event.error);
+    if (event.done === true) done = true;
+    if (typeof event.text === 'string') { full += event.text; onChunk(full); }
+  }
   try {
-    // Create a new chat session with the specific system instruction for the persona
-    chatSession = ai.chats.create({
-      model: DEFAULT_MODEL_ID,
-      config: {
-        systemInstruction: systemInstruction,
-      },
-    });
-    return true;
-  } catch (error) {
-    console.error("Failed to initialize AI session:", error);
-    return false;
-  }
-};
-
-export const sendMessageStream = async (
-  text: string,
-  attachments: Attachment[],
-  onChunk: (text: string) => void
-): Promise<string> => {
-  if (!chatSession) {
-    throw new Error("AI session not initialized.");
-  }
-
-  let fullResponse = "";
-
-  try {
-    // Construct content parts
-    const parts: any[] = [];
-    
-    // Add attachments first (images/files)
-    if (attachments && attachments.length > 0) {
-      attachments.forEach((att) => {
-        parts.push({
-          inlineData: {
-            mimeType: att.mimeType,
-            data: att.data,
-          },
-        });
-      });
+    while (true) {
+      const chunk = await reader.read();
+      pending += decoder.decode(chunk.value, { stream: !chunk.done });
+      const lines = pending.split('\n'); pending = lines.pop() || '';
+      lines.forEach(consume);
+      if (chunk.done) break;
     }
-
-    // Add text prompt
-    if (text) {
-      parts.push({ text: text });
-    }
-
-    // If we only have text, we can send just the string, but for consistency with attachments we use the parts array usually.
-    // However, the SDK's Chat.sendMessageStream expects a generic message structure.
-    const messagePayload = parts.length === 1 && parts[0].text ? parts[0].text : parts;
-
-    const result = await chatSession.sendMessageStream({ message: messagePayload });
-
-    for await (const chunk of result) {
-      const chunkText = chunk.text;
-      if (chunkText) {
-        fullResponse += chunkText;
-        onChunk(fullResponse);
-      }
-    }
-
-    return fullResponse;
-
-  } catch (error) {
-    console.error("Error sending message:", error);
-    throw error;
-  }
-};
+    if (pending) consume(pending);
+    if (!done) throw new Error('AI response was interrupted. Please retry.');
+  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+  history.push({ role: 'user', text: text || '[Attachment]' }, { role: 'model', text: full.slice(0, 8000) });
+  history = history.slice(-12);
+  return full;
+}
