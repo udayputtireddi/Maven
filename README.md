@@ -38,32 +38,41 @@ Maven is a sophisticated, AI-powered web application that gives you instant acce
 
 ### Prerequisites
 
-*   Node.js (v18+)
+*   Node.js 22
 *   npm or yarn
-*   A valid API Key (set as `process.env.API_KEY`)
+*   Server-side Gemini credentials and Firebase Auth; see the secure backend setup below.
 
 ### Installation
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/maven-app.git
-    cd maven-app
+    git clone https://github.com/udayputtireddi/Maven.git
+    cd Maven
     ```
 
 2.  Install dependencies:
     ```bash
-    npm install
+    npm ci
     ```
 
 3.  Run the development server:
     ```bash
-    npm start
+    npm run dev
     ```
 
 ## 🔒 Privacy & Data
 
-Maven stores your conversation history locally in your browser's `localStorage`. No data is sent to external servers other than the AI provider for processing the immediate request. You can clear your data at any time via the sidebar.
+Maven stores your conversation history locally in your browser's `localStorage`. AI messages and attachments pass through the authenticated backend to Gemini. Firestore stores usage counters; the backend does not persist conversation content. You can clear your data at any time via the sidebar.
 
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+
+
+## AI backend security
+
+AI now uses an authenticated server endpoint; never put Gemini credentials in Vite
+environment variables. Backend deployment and secret rotation remain pending.
+See [setup, limits, compatibility and validation](docs/ai-backend-security.md).
+Next steps: review CI, configure the backend and approve a staged rollout.
